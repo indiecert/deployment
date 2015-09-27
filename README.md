@@ -1,6 +1,5 @@
 # Introduction
-These are all the files to get a Docker instance running with 
-IndieCert.
+These are all the files to get a Docker instance running with IndieCert.
 
 To build the Docker image:
 

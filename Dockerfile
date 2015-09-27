@@ -8,14 +8,15 @@ RUN yum -y install epel-release; yum clean all
 RUN curl -s -L -o /etc/yum.repos.d/fkooman-php-base-epel-7.repo https://copr.fedoraproject.org/coprs/fkooman/php-base/repo/epel-7/fkooman-php-base-epel-7.repo
 RUN curl -s -L -o /etc/yum.repos.d/fkooman-indiecert-epel-7.repo https://copr.fedoraproject.org/coprs/fkooman/indiecert/repo/epel-7/fkooman-indiecert-epel-7.repo
 
-RUN yum install -y mod_ssl httpd php-fpm php-opcache indiecert; yum clean all
+RUN yum install -y mod_ssl httpd php-fpm php-opcache indiecert-auth indiecert-enroll; yum clean all
 
 # generate the server certificate
 RUN openssl req -subj '/CN=indiecert.example' -new -x509 -nodes -out /etc/pki/tls/certs/indiecert.example.crt -keyout /etc/pki/tls/private/indiecert.example.key
 RUN chmod 600 /etc/pki/tls/private/indiecert.example.key
 
 # empty the existing indiecert httpd config as it conflicts with indiecert.example
-RUN echo '' > /etc/httpd/conf.d/indiecert.conf
+RUN echo '' > /etc/httpd/conf.d/indiecert-auth.conf
+RUN echo '' > /etc/httpd/conf.d/indiecert-enroll.conf
 
 # add httpd config for indiecert.example
 ADD indiecert.example-httpd.conf /etc/httpd/conf.d/indiecert.example.conf
@@ -37,19 +38,19 @@ RUN update-ca-trust
 
 # disable the certificate check for use within the docker image, as there is
 # no trusted certificate for "indiecert.example" so verification will fail...
-RUN sed -i 's/;disableServerCertCheck/disableServerCertCheck/' /etc/indiecert/config.ini
+RUN sed -i 's/;disableServerCertCheck/disableServerCertCheck/' /etc/indiecert-auth/config.ini
 
 # enable Twig template cache
-RUN sed -i 's/;templateCache/templateCache/' /etc/indiecert/config.ini
+RUN sed -i 's/;templateCache/templateCache/' /etc/indiecert-auth/config.ini
 
 # recommendation from https://php.net/manual/en/opcache.installation.php
 RUN sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=60/' /etc/php.d/opcache.ini
 
 USER apache
 
-# Initialize CA and DB
-RUN indiecert-init-ca
-RUN indiecert-init-db
+# Initialize DB and CA
+RUN indiecert-auth-init-db
+RUN indiecert-enroll-init-ca
 
 USER root
 
