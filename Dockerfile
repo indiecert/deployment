@@ -1,4 +1,4 @@
-FROM       centos:latest
+FROM       docker.io/centos:latest
 MAINTAINER François Kooman <fkooman@tuxed.net>
 
 RUN yum -y update; yum clean all
@@ -25,7 +25,7 @@ ADD indiecert.example-httpd.conf /etc/httpd/conf.d/indiecert.example.conf
 RUN sed -i 's/;date.timezone =/date.timezone = UTC/' /etc/php.ini
 
 #https://secure.php.net/manual/en/ini.core.php#ini.expose-php
-RUN sed -i 's/expose_php = On/expose_php = Off' /etc/php.ini
+RUN sed -i 's/expose_php = On/expose_php = Off/' /etc/php.ini
  
 # Don't have Apache advertise all version details
 # https://httpd.apache.org/docs/2.4/mod/core.html#ServerTokens
