@@ -8,18 +8,18 @@ RUN yum -y install epel-release; yum clean all
 RUN curl -s -L -o /etc/yum.repos.d/fkooman-php-base-epel-7.repo https://copr.fedoraproject.org/coprs/fkooman/php-base/repo/epel-7/fkooman-php-base-epel-7.repo
 RUN curl -s -L -o /etc/yum.repos.d/fkooman-indiecert-epel-7.repo https://copr.fedoraproject.org/coprs/fkooman/indiecert/repo/epel-7/fkooman-indiecert-epel-7.repo
 
-RUN yum install -y mod_ssl httpd php-fpm php-opcache indiecert-auth indiecert-enroll; yum clean all
+RUN yum install -y mod_ssl httpd php php-opcache indiecert-auth indiecert-enroll indiecert-oauth; yum clean all
 
 # generate the server certificate
-RUN openssl req -subj '/CN=indiecert.example' -new -x509 -nodes -out /etc/pki/tls/certs/indiecert.example.crt -keyout /etc/pki/tls/private/indiecert.example.key
-RUN chmod 600 /etc/pki/tls/private/indiecert.example.key
+#RUN openssl req -subj '/CN=indiecert.example' -new -x509 -nodes -out /etc/pki/tls/certs/indiecert.example.crt -keyout /etc/pki/tls/private/indiecert.example.key
+#RUN chmod 600 /etc/pki/tls/private/indiecert.example.key
 
 # empty the existing indiecert httpd config as it conflicts with indiecert.example
-RUN echo '' > /etc/httpd/conf.d/indiecert-auth.conf
-RUN echo '' > /etc/httpd/conf.d/indiecert-enroll.conf
+#RUN echo '' > /etc/httpd/conf.d/indiecert-auth.conf
+#RUN echo '' > /etc/httpd/conf.d/indiecert-enroll.conf
 
 # add httpd config for indiecert.example
-ADD indiecert.example-httpd.conf /etc/httpd/conf.d/indiecert.example.conf
+#ADD indiecert.example-httpd.conf /etc/httpd/conf.d/indiecert.example.conf
 
 # Set PHP timezone, to suppress errors in the log
 RUN sed -i 's/;date.timezone =/date.timezone = UTC/' /etc/php.ini
@@ -51,6 +51,7 @@ USER apache
 # Initialize DB and CA
 RUN indiecert-auth-init-db
 RUN indiecert-enroll-init-ca
+RUN indiecert-oauth-init-db
 
 USER root
 
