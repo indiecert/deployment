@@ -23,9 +23,23 @@ sudo dnf -y install mod_ssl php php-opcache php-fpm httpd vim-minimal telnet ope
 # install IndieCert
 sudo dnf -y install indiecert-auth indiecert-enroll indiecert-oauth
 
-# generate self signed SSL certificate
-sudo openssl req -subj "/CN=${HOSTNAME}" -new -x509 -nodes -out /etc/pki/tls/certs/${HOSTNAME}.crt -keyout /etc/pki/tls/private/${HOSTNAME}.key
+#
+# CERTIFICATE
+#
+
+# Generate the private key
+sudo openssl genrsa -out /etc/pki/tls/private/${HOSTNAME}.key 2048
 sudo chmod 600 /etc/pki/tls/private/${HOSTNAME}.key
+
+# Update the config file
+sudo cp indiecert.example.cnf ${HOSTNAME}.cnf
+sudo sed -i "s/indiecert.example/${HOSTNAME}/" ${HOSTNAME}.cnf
+
+# Create the CSR (can be used to obtain real certificate!)
+sudo openssl req -sha256 -new    -reqexts v3_req -config ${HOSTNAME}.cnf       -key /etc/pki/tls/private/${HOSTNAME}.key -out ${HOSTNAME}.csr
+
+# Create the (self signed) certificate and install it
+sudo openssl req -sha256 -new -extensions v3_req -config ${HOSTNAME}.cnf -x509 -key /etc/pki/tls/private/${HOSTNAME}.key -out /etc/pki/tls/certs/${HOSTNAME}.crt
 
 # empty the default Apache config files
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-auth.conf'
