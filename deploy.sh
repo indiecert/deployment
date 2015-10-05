@@ -3,10 +3,17 @@
 # Script to deploy IndieCert on a Fedora >= 22 installation using DNF.
 # Tested on Fedora 23 Beta.
 
+###############################################################################
+# VARIABLES
+###############################################################################
+
 # VARIABLES
 HOSTNAME=indiecert.example
 
-# update system
+###############################################################################
+# SYSTEM
+###############################################################################
+
 sudo dnf clean all
 sudo dnf -y update
 
@@ -23,9 +30,9 @@ sudo dnf -y install mod_ssl php php-opcache php-fpm httpd vim-minimal telnet ope
 # install IndieCert
 sudo dnf -y install indiecert-auth indiecert-enroll indiecert-oauth
 
-#
+###############################################################################
 # CERTIFICATE
-#
+###############################################################################
 
 # Generate the private key
 sudo openssl genrsa -out /etc/pki/tls/private/${HOSTNAME}.key 2048
@@ -41,10 +48,26 @@ sudo openssl req -sha256 -new    -reqexts v3_req -config ${HOSTNAME}.cnf       -
 # Create the (self signed) certificate and install it
 sudo openssl req -sha256 -new -extensions v3_req -config ${HOSTNAME}.cnf -x509 -key /etc/pki/tls/private/${HOSTNAME}.key -out /etc/pki/tls/certs/${HOSTNAME}.crt
 
+###############################################################################
+# APACHE
+###############################################################################
+
 # empty the default Apache config files
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-auth.conf'
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-enroll.conf'
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-oauth.conf'
+
+# use the global httpd config file
+sudo cp indiecert.example-httpd.conf /etc/httpd/conf.d/${HOSTNAME}.conf
+sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/${HOSTNAME}.conf
+
+# Don't have Apache advertise all version details
+# https://httpd.apache.org/docs/2.4/mod/core.html#ServerTokens
+sudo sh -c 'echo "ServerTokens ProductOnly" > /etc/httpd/conf.d/servertokens.conf'
+
+###############################################################################
+# PHP
+###############################################################################
 
 # Set PHP timezone, to suppress errors in the log
 sudo sed -i 's/;date.timezone =/date.timezone = UTC/' /etc/php.ini
@@ -52,9 +75,17 @@ sudo sed -i 's/;date.timezone =/date.timezone = UTC/' /etc/php.ini
 #https://secure.php.net/manual/en/ini.core.php#ini.expose-php
 sudo sed -i 's/expose_php = On/expose_php = Off/' /etc/php.ini
  
-# Don't have Apache advertise all version details
-# https://httpd.apache.org/docs/2.4/mod/core.html#ServerTokens
-sudo sh -c 'echo "ServerTokens ProductOnly" > /etc/httpd/conf.d/servertokens.conf'
+# recommendation from https://php.net/manual/en/opcache.installation.php
+sudo sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=60/' /etc/php.d/10-opcache.ini
+
+# PHP-FPM configuration
+# XXX: use socket instead?
+sudo sed -i "s|listen = /run/php-fpm/www.sock|listen = [::]:9000|" /etc/php-fpm.d/www.conf
+sudo sed -i "s/listen.allowed_clients = 127.0.0.1/listen.allowed_clients = 127.0.0.1,::1/" /etc/php-fpm.d/www.conf
+
+###############################################################################
+# APP
+###############################################################################
 
 # disable the certificate check for now, as there is no trusted certificate 
 # for "${HOSTNAME}" so verification will fail...
@@ -65,20 +96,7 @@ sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-auth/config.ini
 sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-enroll/config.ini
 sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-oauth/server.ini
 
-# recommendation from https://php.net/manual/en/opcache.installation.php
-sudo sed -i 's/;opcache.revalidate_freq=2/opcache.revalidate_freq=60/' /etc/php.d/10-opcache.ini
-
-# use the global httpd config file
-sudo cp indiecert.example-httpd.conf /etc/httpd/conf.d/${HOSTNAME}.conf
-sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/${HOSTNAME}.conf
-
-# PHP-FPM configuration
-# XXX: use socket instead?
-sudo sed -i "s|listen = /run/php-fpm/www.sock|listen = [::]:9000|" /etc/php-fpm.d/www.conf
-sudo sed -i "s/listen.allowed_clients = 127.0.0.1/listen.allowed_clients = 127.0.0.1,::1/" /etc/php-fpm.d/www.conf
-
-# Add CAcert as a valid CA (this is pointless here as we disable certificate
-# check anyway in the next step, but for production we use this)
+# Add CAcert as a valid CA
 sudo cp CAcert.pem /etc/pki/ca-trust/source/anchors/CAcert.pem
 sudo update-ca-trust
 
@@ -86,6 +104,10 @@ sudo update-ca-trust
 sudo -u apache indiecert-auth-init-db
 sudo -u apache indiecert-enroll-init-ca
 sudo -u apache indiecert-oauth-init-db
+
+###############################################################################
+# DAEMONS
+###############################################################################
 
 # enable HTTPD and PHP-FPM on boot
 sudo systemctl enable httpd
