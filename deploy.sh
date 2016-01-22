@@ -88,7 +88,7 @@ sudo sed -i "s/listen.allowed_clients = 127.0.0.1/listen.allowed_clients = 127.0
 
 # disable the certificate check for now, as there is no trusted certificate 
 # for "${HOSTNAME}" so verification will fail...
-sudo sed -i 's/serverMode production/serverMode development/' /etc/indiecert-demo/config.yaml
+sudo sed -i 's/serverMode: production/serverMode: development/' /etc/indiecert-demo/config.yaml
 
 # enable Twig template cache
 sudo sed -i 's/#templateCache/templateCache/' /etc/indiecert-auth/config.yaml
