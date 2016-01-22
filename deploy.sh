@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Script to deploy IndieCert on a Fedora >= 22 installation using DNF.
-# Tested on Fedora 23 Beta.
+# Tested on Fedora 23
 
 ###############################################################################
 # VARIABLES
@@ -17,18 +17,16 @@ HOSTNAME=indiecert.example
 sudo dnf clean all
 sudo dnf -y update
 
-# set hostname
-sudo hostnamectl set-hostname ${HOSTNAME}
-
 # enable COPR repos
 sudo dnf -y copr enable fkooman/php-base
 sudo dnf -y copr enable fkooman/indiecert
 
 # install additional software
-sudo dnf -y install mod_ssl php php-opcache php-fpm httpd vim-minimal telnet openssl
+sudo dnf -y install mod_ssl php php-opcache php-fpm httpd
 
 # install IndieCert
-sudo dnf -y install indiecert-auth indiecert-enroll indiecert-oauth
+sudo dnf -y install indiecert-auth indiecert-demo
+#indiecert-enroll indiecert-oauth
 
 ###############################################################################
 # CERTIFICATE
@@ -54,12 +52,15 @@ sudo openssl req -sha256 -new -extensions v3_req -config ${HOSTNAME}.cnf -x509 -
 
 # empty the default Apache config files
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-auth.conf'
-sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-enroll.conf'
-sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-oauth.conf'
+sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-demo.conf'
+#sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-enroll.conf'
+#sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-oauth.conf'
 
-# use the global httpd config file
+# use the httpd config files
 sudo cp indiecert.example-httpd.conf /etc/httpd/conf.d/${HOSTNAME}.conf
+sudo cp demo.indiecert.example-httpd.conf /etc/httpd/conf.d/demo.${HOSTNAME}.conf
 sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/${HOSTNAME}.conf
+sudo sed -i "s/demo.indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/demo.${HOSTNAME}.conf
 
 # Don't have Apache advertise all version details
 # https://httpd.apache.org/docs/2.4/mod/core.html#ServerTokens
@@ -89,21 +90,21 @@ sudo sed -i "s/listen.allowed_clients = 127.0.0.1/listen.allowed_clients = 127.0
 
 # disable the certificate check for now, as there is no trusted certificate 
 # for "${HOSTNAME}" so verification will fail...
-sudo sed -i 's/;disableServerCertCheck/disableServerCertCheck/' /etc/indiecert-auth/config.ini
+sudo sed -i 's/serverMode production/serverMode development/' /etc/indiecert-auth/config.yaml
 
 # enable Twig template cache
-sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-auth/config.ini
-sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-enroll/config.ini
-sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-oauth/server.ini
+sudo sed -i 's/#templateCache/templateCache/' /etc/indiecert-auth/config.yaml
+#sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-enroll/config.ini
+#sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-oauth/server.ini
 
 # Add CAcert as a valid CA
 sudo cp CAcert.pem /etc/pki/ca-trust/source/anchors/CAcert.pem
 sudo update-ca-trust
 
 # Initialize DB and CA
-sudo -u apache indiecert-auth-init-db
-sudo -u apache indiecert-enroll-init-ca
-sudo -u apache indiecert-oauth-init-db
+sudo -u apache indiecert-auth-init
+#sudo -u apache indiecert-enroll-init
+#sudo -u apache indiecert-oauth-init
 
 ###############################################################################
 # DAEMONS
