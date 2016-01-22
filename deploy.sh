@@ -53,14 +53,12 @@ sudo openssl req -sha256 -new -extensions v3_req -config ${HOSTNAME}.cnf -x509 -
 # empty the default Apache config files
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-auth.conf'
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-demo.conf'
-#sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-enroll.conf'
-#sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-oauth.conf'
 
 # use the httpd config files
 sudo cp indiecert.example-httpd.conf /etc/httpd/conf.d/${HOSTNAME}.conf
 sudo cp demo.indiecert.example-httpd.conf /etc/httpd/conf.d/demo.${HOSTNAME}.conf
 sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/${HOSTNAME}.conf
-sudo sed -i "s/demo.indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/demo.${HOSTNAME}.conf
+sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/demo.${HOSTNAME}.conf
 
 # Don't have Apache advertise all version details
 # https://httpd.apache.org/docs/2.4/mod/core.html#ServerTokens
@@ -90,10 +88,11 @@ sudo sed -i "s/listen.allowed_clients = 127.0.0.1/listen.allowed_clients = 127.0
 
 # disable the certificate check for now, as there is no trusted certificate 
 # for "${HOSTNAME}" so verification will fail...
-sudo sed -i 's/serverMode production/serverMode development/' /etc/indiecert-auth/config.yaml
+sudo sed -i 's/serverMode production/serverMode development/' /etc/indiecert-demo/config.yaml
 
 # enable Twig template cache
 sudo sed -i 's/#templateCache/templateCache/' /etc/indiecert-auth/config.yaml
+#sudo sed -i 's/#templateCache/templateCache/' /etc/indiecert-demo/config.yaml
 #sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-enroll/config.ini
 #sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-oauth/server.ini
 
