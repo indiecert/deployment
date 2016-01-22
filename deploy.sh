@@ -96,10 +96,6 @@ sudo sed -i 's/#templateCache/templateCache/' /etc/indiecert-auth/config.yaml
 #sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-enroll/config.ini
 #sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-oauth/server.ini
 
-# Add CAcert as a valid CA
-sudo cp CAcert.pem /etc/pki/ca-trust/source/anchors/CAcert.pem
-sudo update-ca-trust
-
 # Initialize DB and CA
 sudo -u apache indiecert-auth-init
 #sudo -u apache indiecert-enroll-init
