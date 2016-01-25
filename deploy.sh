@@ -25,7 +25,7 @@ sudo dnf -y copr enable fkooman/indiecert
 sudo dnf -y install mod_ssl php php-opcache php-fpm httpd
 
 # install IndieCert
-sudo dnf -y install indiecert-auth indiecert-demo indiecert-enroll
+sudo dnf -y install indiecert-auth indiecert-demo
 
 ###############################################################################
 # CERTIFICATE
@@ -52,16 +52,13 @@ sudo openssl req -sha256 -new -extensions v3_req -config ${HOSTNAME}.cnf -x509 -
 # empty the default Apache config files
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-auth.conf'
 sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-demo.conf'
-sudo sh -c 'echo "" > /etc/httpd/conf.d/indiecert-enroll.conf'
 
 # use the httpd config files
 sudo cp indiecert.example-httpd.conf /etc/httpd/conf.d/${HOSTNAME}.conf
 sudo cp demo.indiecert.example-httpd.conf /etc/httpd/conf.d/demo.${HOSTNAME}.conf
-sudo cp enroll.indiecert.example-httpd.conf /etc/httpd/conf.d/enroll.${HOSTNAME}.conf
 
 sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/${HOSTNAME}.conf
 sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/demo.${HOSTNAME}.conf
-sudo sed -i "s/indiecert.example/${HOSTNAME}/" /etc/httpd/conf.d/enroll.${HOSTNAME}.conf
 
 # Don't have Apache advertise all version details
 # https://httpd.apache.org/docs/2.4/mod/core.html#ServerTokens
@@ -97,11 +94,10 @@ sudo sed -i 's/serverMode: production/serverMode: development/' /etc/indiecert-d
 # enable Twig template cache
 sudo sed -i 's/#templateCache/templateCache/' /etc/indiecert-auth/config.yaml
 #sudo sed -i 's/#templateCache/templateCache/' /etc/indiecert-demo/config.yaml
-#sudo sed -i 's/;templateCache/templateCache/' /etc/indiecert-enroll/config.ini
 
 # Initialize DB and CA
 sudo -u apache indiecert-auth-init
-sudo -u apache indiecert-enroll-init
+sudo -u apache indiecert-auth-init-ca
 
 ###############################################################################
 # DAEMONS
