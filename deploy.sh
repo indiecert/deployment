@@ -14,18 +14,14 @@ HOSTNAME=indiecert.example
 # SYSTEM
 ###############################################################################
 
-sudo dnf clean all
 sudo dnf -y update
 
 # enable COPR repos
 sudo dnf -y copr enable fkooman/php-base
 sudo dnf -y copr enable fkooman/indiecert
 
-# install additional software
-sudo dnf -y install mod_ssl php php-opcache php-fpm httpd
-
-# install IndieCert
-sudo dnf -y install indiecert-auth indiecert-demo
+# install software
+sudo dnf -y install mod_ssl php php-opcache php-fpm httpd indiecert-auth indiecert-demo
 
 ###############################################################################
 # CERTIFICATE
